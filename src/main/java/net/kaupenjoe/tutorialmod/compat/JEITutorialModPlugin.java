@@ -10,6 +10,7 @@ import net.kaupenjoe.tutorialmod.recipe.GemPolishingRecipe;
 import net.kaupenjoe.tutorialmod.screen.GemPolishingStationScreen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.RecipeManager;
 
 import java.util.List;
@@ -30,8 +31,8 @@ public class JEITutorialModPlugin implements IModPlugin {
     public void registerRecipes(IRecipeRegistration registration) {
         RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
 
-        List<GemPolishingRecipe> polishingRecipes = recipeManager.getAllRecipesFor(GemPolishingRecipe.Type.INSTANCE);
-        registration.addRecipes(GemPolishingCategory.GEM_POLISHING_TYPE, polishingRecipes);
+        List<RecipeHolder<GemPolishingRecipe>> polishingRecipes = recipeManager.getAllRecipesFor(GemPolishingRecipe.Type.INSTANCE);
+        registration.addRecipes(GemPolishingCategory.GEM_POLISHING_TYPE, polishingRecipes.stream().map(RecipeHolder::value).toList());
     }
 
     @Override

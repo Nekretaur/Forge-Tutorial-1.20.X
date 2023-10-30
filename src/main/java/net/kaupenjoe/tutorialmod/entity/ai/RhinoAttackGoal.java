@@ -25,8 +25,8 @@ public class RhinoAttackGoal extends MeleeAttackGoal {
     }
 
     @Override
-    protected void checkAndPerformAttack(LivingEntity pEnemy, double pDistToEnemySqr) {
-        if (isEnemyWithinAttackDistance(pEnemy, pDistToEnemySqr)) {
+    protected void checkAndPerformAttack(LivingEntity pEnemy) {
+        if (canPerformAttack(pEnemy)) {
             shouldCountTillNextAttack = true;
 
             if(isTimeToStartAttackAnimation()) {
@@ -44,11 +44,7 @@ public class RhinoAttackGoal extends MeleeAttackGoal {
             entity.attackAnimationTimeout = 0;
         }
     }
-
-    private boolean isEnemyWithinAttackDistance(LivingEntity pEnemy, double pDistToEnemySqr) {
-        return pDistToEnemySqr <= this.getAttackReachSqr(pEnemy);
-    }
-
+    
     protected void resetAttackCooldown() {
         this.ticksUntilNextAttack = this.adjustedTickDelay(attackDelay * 2);
     }

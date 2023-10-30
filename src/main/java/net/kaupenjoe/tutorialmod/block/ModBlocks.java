@@ -83,7 +83,7 @@ public class ModBlocks {
 
 
     public static final RegistryObject<Block> CATMINT = registerBlock("catmint",
-            () -> new FlowerBlock(() -> MobEffects.LUCK, 5,
+            () -> new FlowerBlock(MobEffects.LUCK, 5,
                     BlockBehaviour.Properties.copy(Blocks.ALLIUM).noOcclusion().noCollission()));
     public static final RegistryObject<Block> POTTED_CATMINT = BLOCKS.register("potted_catmint",
             () -> new FlowerPotBlock(() -> ((FlowerPotBlock) Blocks.FLOWER_POT), ModBlocks.CATMINT,

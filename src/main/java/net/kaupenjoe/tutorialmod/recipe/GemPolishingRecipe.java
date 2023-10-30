@@ -2,11 +2,15 @@ package net.kaupenjoe.tutorialmod.recipe;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.kaupenjoe.tutorialmod.TutorialMod;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.ExtraCodecs;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
@@ -14,15 +18,15 @@ import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.Function;
+
 public class GemPolishingRecipe implements Recipe<SimpleContainer> {
     private final NonNullList<Ingredient> inputItems;
     private final ItemStack output;
-    private final ResourceLocation id;
 
-    public GemPolishingRecipe(NonNullList<Ingredient> inputItems, ItemStack output, ResourceLocation id) {
+    public GemPolishingRecipe(NonNullList<Ingredient> inputItems, ItemStack output) {
         this.inputItems = inputItems;
         this.output = output;
-        this.id = id;
     }
 
     @Override
@@ -55,11 +59,6 @@ public class GemPolishingRecipe implements Recipe<SimpleContainer> {
     }
 
     @Override
-    public ResourceLocation getId() {
-        return id;
-    }
-
-    @Override
     public RecipeSerializer<?> getSerializer() {
         return Serializer.INSTANCE;
     }
@@ -77,31 +76,28 @@ public class GemPolishingRecipe implements Recipe<SimpleContainer> {
     public static class Serializer implements RecipeSerializer<GemPolishingRecipe> {
         public static final Serializer INSTANCE = new Serializer();
         public static final ResourceLocation ID = new ResourceLocation(TutorialMod.MOD_ID, "gem_polishing");
+        private static final Codec<GemPolishingRecipe> CODEC = RecordCodecBuilder.create((instance) -> {
+            return instance.group(Ingredient.CODEC_NONEMPTY.listOf().fieldOf("ingredients").xmap((ingredients) -> {
+                Ingredient[] aingredient = ingredients.stream().filter((ingredient) -> !ingredient.isEmpty()).toArray(Ingredient[]::new);
+                return NonNullList.of(Ingredient.EMPTY, aingredient);
+            }, Function.identity()).forGetter((recipe) -> recipe.inputItems),
+                    CraftingRecipeCodecs.ITEMSTACK_OBJECT_CODEC.fieldOf("result").forGetter(recipe -> recipe.output))
+                    .apply(instance, GemPolishingRecipe::new);
+        });
 
         @Override
-        public GemPolishingRecipe fromJson(ResourceLocation pRecipeId, JsonObject pSerializedRecipe) {
-            ItemStack output = ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(pSerializedRecipe, "output"));
-
-            JsonArray ingredients = GsonHelper.getAsJsonArray(pSerializedRecipe, "ingredients");
-            NonNullList<Ingredient> inputs = NonNullList.withSize(1, Ingredient.EMPTY);
-
-            for(int i = 0; i < inputs.size(); i++) {
-                inputs.set(i, Ingredient.fromJson(ingredients.get(i)));
-            }
-
-            return new GemPolishingRecipe(inputs, output, pRecipeId);
+        public Codec<GemPolishingRecipe> codec() {
+            return CODEC;
         }
 
         @Override
-        public @Nullable GemPolishingRecipe fromNetwork(ResourceLocation pRecipeId, FriendlyByteBuf pBuffer) {
+        public @Nullable GemPolishingRecipe fromNetwork(FriendlyByteBuf pBuffer) {
             NonNullList<Ingredient> inputs = NonNullList.withSize(pBuffer.readInt(), Ingredient.EMPTY);
 
-            for(int i = 0; i < inputs.size(); i++) {
-                inputs.set(i, Ingredient.fromNetwork(pBuffer));
-            }
+            inputs.replaceAll(ignored -> Ingredient.fromNetwork(pBuffer));
 
             ItemStack output = pBuffer.readItem();
-            return new GemPolishingRecipe(inputs, output, pRecipeId);
+            return new GemPolishingRecipe(inputs, output);
         }
 
         @Override
